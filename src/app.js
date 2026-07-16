@@ -5,6 +5,7 @@ import courseRoutes from "./routes/courseRoutes.js";
 import subResourceRoutes from "./routes/subResourceRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import movieRoutes from "./routes/movieRoutes.js";
 import { setupSwagger } from "./swagger.js";
 
 dotenv.config();
@@ -60,6 +61,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/courses", subResourceRoutes); // Mount nested subjects and modules
 app.use("/api/users", userRoutes); // Mount users resource routes
 app.use("/api/auth", authRoutes); // Mount authentication routes
+app.use("/api/movies", movieRoutes); // Mount movies resource routes
 
 // Setup Swagger documentation
 setupSwagger(app);

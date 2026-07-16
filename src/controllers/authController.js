@@ -51,23 +51,25 @@ export async function signup(req, res, next) {
     const email = req.body.emailid.trim().toLowerCase();
     const username = req.body.username.trim();
 
-    // Check if email already exists
+    // Check if email or username already exists
+    const duplicateErrors = [];
+
     const qEmail = query(usersCollection, where("emailid", "==", email));
     const emailSnapshot = await getDocs(qEmail);
     if (!emailSnapshot.empty) {
-      return res.status(400).json({ 
-        error: "Validation Error", 
-        details: ["A user with this email address already exists."] 
-      });
+      duplicateErrors.push("A user with this email address already exists.");
     }
 
-    // Check if username already exists
     const qUsername = query(usersCollection, where("username", "==", username));
     const usernameSnapshot = await getDocs(qUsername);
     if (!usernameSnapshot.empty) {
+      duplicateErrors.push("A user with this username already exists.");
+    }
+
+    if (duplicateErrors.length > 0) {
       return res.status(400).json({ 
         error: "Validation Error", 
-        details: ["A user with this username already exists."] 
+        details: duplicateErrors 
       });
     }
 

@@ -7,7 +7,9 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc,
-  runTransaction
+  runTransaction,
+  query,
+  where
 } from "firebase/firestore";
 import { validateUser } from "../models/userSchema.js";
 
@@ -90,11 +92,36 @@ export async function createUser(req, res, next) {
       return res.status(400).json({ error: "Validation Error", details: errors });
     }
 
+    const email = req.body.emailid.trim().toLowerCase();
+    const username = req.body.username.trim();
+
+    // Check if email or username already exists
+    const duplicateErrors = [];
+
+    const qEmail = query(usersCollection, where("emailid", "==", email));
+    const emailSnapshot = await getDocs(qEmail);
+    if (!emailSnapshot.empty) {
+      duplicateErrors.push("A user with this email address already exists.");
+    }
+
+    const qUsername = query(usersCollection, where("username", "==", username));
+    const usernameSnapshot = await getDocs(qUsername);
+    if (!usernameSnapshot.empty) {
+      duplicateErrors.push("A user with this username already exists.");
+    }
+
+    if (duplicateErrors.length > 0) {
+      return res.status(400).json({ 
+        error: "Validation Error", 
+        details: duplicateErrors 
+      });
+    }
+
     const nextId = await getNextUserId();
     const userData = {
       id: nextId,
-      username: req.body.username,
-      emailid: req.body.emailid,
+      username: username,
+      emailid: email,
       age: req.body.age,
       role: req.body.role.toUpperCase()
     };
@@ -133,11 +160,38 @@ export async function updateUser(req, res, next) {
       return res.status(400).json({ error: "Validation Error", details: errors });
     }
 
+    const email = req.body.emailid.trim().toLowerCase();
+    const username = req.body.username.trim();
+
+    // Check if email or username already exists on another user
+    const duplicateErrors = [];
+
+    const qEmail = query(usersCollection, where("emailid", "==", email));
+    const emailSnapshot = await getDocs(qEmail);
+    const emailConflict = emailSnapshot.docs.some(doc => doc.id !== String(id));
+    if (emailConflict) {
+      duplicateErrors.push("A user with this email address already exists.");
+    }
+
+    const qUsername = query(usersCollection, where("username", "==", username));
+    const usernameSnapshot = await getDocs(qUsername);
+    const usernameConflict = usernameSnapshot.docs.some(doc => doc.id !== String(id));
+    if (usernameConflict) {
+      duplicateErrors.push("A user with this username already exists.");
+    }
+
+    if (duplicateErrors.length > 0) {
+      return res.status(400).json({ 
+        error: "Validation Error", 
+        details: duplicateErrors 
+      });
+    }
+
     const existingData = docSnapshot.data();
     const userData = {
       id: numericId,
-      username: req.body.username,
-      emailid: req.body.emailid,
+      username: username,
+      emailid: email,
       age: req.body.age,
       role: req.body.role.toUpperCase()
     };
@@ -197,16 +251,51 @@ export async function patchUser(req, res, next) {
       return res.status(400).json({ error: "Validation Error", details: errors });
     }
 
+    const email = mergedUser.emailid.trim().toLowerCase();
+    const username = mergedUser.username.trim();
+
+    // Check if email or username already exists on another user
+    const duplicateErrors = [];
+
+    const qEmail = query(usersCollection, where("emailid", "==", email));
+    const emailSnapshot = await getDocs(qEmail);
+    const emailConflict = emailSnapshot.docs.some(doc => doc.id !== String(id));
+    if (emailConflict) {
+      duplicateErrors.push("A user with this email address already exists.");
+    }
+
+    const qUsername = query(usersCollection, where("username", "==", username));
+    const usernameSnapshot = await getDocs(qUsername);
+    const usernameConflict = usernameSnapshot.docs.some(doc => doc.id !== String(id));
+    if (usernameConflict) {
+      duplicateErrors.push("A user with this username already exists.");
+    }
+
+    if (duplicateErrors.length > 0) {
+      return res.status(400).json({ 
+        error: "Validation Error", 
+        details: duplicateErrors 
+      });
+    }
+
     // Capitalize role if it's being updated
     if (mergedUser.role) {
       mergedUser.role = mergedUser.role.toUpperCase();
     }
 
-    await setDoc(docRef, mergedUser);
+    await setDoc(docRef, {
+      ...mergedUser,
+      emailid: email,
+      username: username
+    });
 
     // Omit password from response
     const { password, ...userResponse } = mergedUser;
-    res.status(200).json(userResponse);
+    res.status(200).json({
+      ...userResponse,
+      emailid: email,
+      username: username
+    });
   } catch (error) {
     next(error);
   }

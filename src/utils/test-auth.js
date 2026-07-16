@@ -40,6 +40,21 @@ async function runTests() {
   console.log("PASS: Signup successful! Registered user profile:", signupResult);
   console.log("Checked password security: Hashed password omitted from response:", !signupResult.password);
 
+  // 1b. Test Duplicate Sign Up (should fail)
+  console.log(`\n[TEST 1b] Attempting duplicate registration (same username and emailid)...`);
+  const duplicateResponse = await fetch(`${baseUrl}/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(testUser)
+  });
+  const duplicateResult = await duplicateResponse.json();
+  if (duplicateResponse.status === 400 && duplicateResult.error === "Validation Error" && duplicateResult.details.length > 0) {
+    console.log("PASS: Duplicate registration rejected correctly with Validation Error details:", duplicateResult.details);
+  } else {
+    console.error("FAIL: Duplicate registration should have failed with 400 but returned status:", duplicateResponse.status, duplicateResult);
+    return;
+  }
+
   // 2. Log In (First login)
   console.log(`\n[TEST 2] Logging in with email: ${testUser.emailid} and password: ${testUser.password}...`);
   const loginResponse = await fetch(`${baseUrl}/login`, {

@@ -1,0 +1,36 @@
+{
+  "name": "nodejs-rest-api-sample",
+  "version": "1.0.0",
+  "description": "Node.js REST API with Firebase Firestore and Swagger UI documentation",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/utils/seed.js"
+  },
+  "keywords": [
+    "nodejs",
+    "rest-api",
+    "express",
+    "firebase",
+    "firestore",
+    "swagger",
+    "crud"
+  ],
+  "author": "Antigravity AI",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase": "^10.12.2",
+    "jsonwebtoken": "^9.0.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

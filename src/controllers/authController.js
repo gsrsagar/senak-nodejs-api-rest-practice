@@ -156,6 +156,8 @@ export async function login(req, res, next) {
     res.status(200).json({
       message: "Login successful.",
       token,
+      accessToken: token,
+      refreshToken: "mock_refresh_token_xyz_" + userData.id,
       user: userResponse
     });
   } catch (error) {
@@ -262,3 +264,77 @@ export async function resetPassword(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * GET /api/auth/me
+ * Retrieves current logged-in user profile.
+ */
+export async function getMe(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const docRef = doc(db, "userProfiles", String(userId));
+    const docSnapshot = await getDoc(docRef);
+
+    if (!docSnapshot.exists()) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const userData = docSnapshot.data();
+    const { password, ...userResponse } = userData;
+    res.status(200).json(userResponse);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/auth/refresh
+ * Refreshes JWT token with a mock refresh token.
+ */
+export async function refresh(req, res, next) {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken || !refreshToken.startsWith("mock_refresh_token_xyz_")) {
+      return res.status(401).json({ 
+        error: "Unauthorized", 
+        message: "Invalid or missing refresh token." 
+      });
+    }
+
+    const userId = refreshToken.replace("mock_refresh_token_xyz_", "");
+    const docRef = doc(db, "userProfiles", String(userId));
+    const docSnapshot = await getDoc(docRef);
+
+    if (!docSnapshot.exists()) {
+      return res.status(401).json({ 
+        error: "Unauthorized", 
+        message: "User associated with refresh token not found." 
+      });
+    }
+
+    const userData = docSnapshot.data();
+    
+    // Generate new access token
+    const secret = process.env.JWT_SECRET || "senak360_jwt_default_secret_key";
+    const token = jwt.sign(
+      { 
+        id: userData.id, 
+        username: userData.username, 
+        emailid: userData.emailid, 
+        role: userData.role 
+      },
+      secret,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "24h" }
+    );
+
+    res.status(200).json({
+      message: "Token refreshed successfully.",
+      token,
+      accessToken: token,
+      refreshToken
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

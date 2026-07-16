@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signup, login, logout, changePassword, resetPassword } from "../controllers/authController.js";
+import { signup, login, logout, changePassword, resetPassword, getMe, refresh } from "../controllers/authController.js";
 import { authenticateJWT } from "../utils/authMiddleware.js";
 
 const router = Router();
@@ -270,5 +270,59 @@ router.post("/change-password", authenticateJWT, changePassword);
  *         description: Server error.
  */
 router.post("/reset-password", resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user profile
+ *     description: Returns the user profile details for the active session. Protected by JWT.
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthUserResponse'
+ *       401:
+ *         description: Unauthorized. Missing or invalid Bearer token.
+ *       500:
+ *         description: Server error.
+ */
+router.get("/me", authenticateJWT, getMe);
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Generates a new JWT access token using a refresh token.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 example: "mock_refresh_token_xyz_1"
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully.
+ *       401:
+ *         description: Unauthorized. Missing or invalid refresh token.
+ *       500:
+ *         description: Server error.
+ */
+router.post("/refresh", refresh);
 
 export default router;
